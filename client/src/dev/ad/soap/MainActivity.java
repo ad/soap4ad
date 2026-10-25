@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
     private SharedPreferences prefs;
     private Api api;
     private LinearLayout tabBar;
+    private TextView gear;
     private FrameLayout content;
     private final TextView[] tabViews = new TextView[TABS.length];
     private final Screen[] screens = new Screen[TABS.length];
@@ -67,10 +68,19 @@ public class MainActivity extends Activity {
             tabBar.addView(view, margin);
             tabViews[i] = view;
         }
+        FrameLayout top = new FrameLayout(this);
+        top.addView(tabBar, new FrameLayout.LayoutParams(-1, -2));
+        gear = Cards.button(this, "⚙");
+        gear.setTextSize(20);
+        gear.setPadding(0, 0, 0, 0);
+        gear.setOnClickListener(v -> ((HomeScreen) screens[0]).arrange(gear));
+        FrameLayout.LayoutParams corner = new FrameLayout.LayoutParams(Cards.dp(this, 40), Cards.dp(this, 40), Gravity.END | Gravity.CENTER_VERTICAL);
+        corner.setMarginEnd(Cards.dp(this, 24));
+        top.addView(gear, corner);
         View divider = new View(this);
         divider.setBackgroundColor(0xFF222B36);
         content = new FrameLayout(this);
-        shell.addView(tabBar, new LinearLayout.LayoutParams(-1, -2));
+        shell.addView(top, new LinearLayout.LayoutParams(-1, -2));
         shell.addView(divider, new LinearLayout.LayoutParams(-1, Cards.dp(this, 1)));
         shell.addView(content, new LinearLayout.LayoutParams(-1, 0, 1f));
         setContentView(shell);
@@ -93,6 +103,12 @@ public class MainActivity extends Activity {
     protected void onRestart() {
         super.onRestart();
         if (screens[tab] != null) screens[tab].refresh();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (screens[0] instanceof HomeScreen && ((HomeScreen) screens[0]).closeArrange()) return;
+        super.onBackPressed();
     }
 
     SharedPreferences prefs() {
@@ -188,6 +204,7 @@ public class MainActivity extends Activity {
         }
         content.removeAllViews();
         content.addView(screens[index].view());
+        gear.setVisibility(index == 0 ? View.VISIBLE : View.GONE);
         paintTabs();
     }
 
@@ -208,6 +225,7 @@ public class MainActivity extends Activity {
 
     private void showLogin() {
         tabBar.setVisibility(View.GONE);
+        gear.setVisibility(View.GONE);
         content.removeAllViews();
         LinearLayout form = new LinearLayout(this);
         form.setOrientation(LinearLayout.VERTICAL);
