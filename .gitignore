@@ -1,0 +1,8 @@
+build/
+out/
+*.apk
+*.idsig
+*.jks
+signing.env
+.DS_Store
+client/libs/
