@@ -11,6 +11,7 @@ public class Checks {
         check(Playback.score(4, 1, 4, 1) > Playback.score(4, 2, 4, 1), "picked SD wins");
         check(Playback.score(4, 3, 4, 1) > Playback.score(4, 4, 4, 1), "nearest above the picked quality");
         check(Playback.qualityName(3).equals("FullHD") && Playback.qualityName(0).equals("—"), "quality names");
+        check(Update.build("v0.1.12") == 12 && Update.build("v1") == -1 && Update.build("") == -1, "release tag build number");
         System.out.println("client checks ok");
     }
 

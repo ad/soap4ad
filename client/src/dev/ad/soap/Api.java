@@ -116,7 +116,7 @@ final class Api {
         return text;
     }
 
-    private static String read(InputStream in) throws IOException {
+    static String read(InputStream in) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         for (int n; (n = in.read(buffer)) > 0; ) out.write(buffer, 0, n);

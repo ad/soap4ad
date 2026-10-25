@@ -84,6 +84,12 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        Update.check(this);
+    }
+
+    @Override
     protected void onRestart() {
         super.onRestart();
         if (screens[tab] != null) screens[tab].refresh();
