@@ -43,6 +43,12 @@
 
 Запись «продолжить просмотр»: `soap`, `soap_ru`, `title_ru`, `title_en`, `sid`, `season_id`, `season`, `episode`, `played` (время запуска), `time`, `covers`, `files`.
 
+`/episodes/new`: 15 последних серий. У тестового аккаунта все из сериалов в «Мои», похоже, лента персональная. Поля как у «продолжить просмотр», вместо `played` и `time` идут `first_aired` (`YYYY-MM-DD`) и `spoiler`. Числа строками. Порядок не по дате: записи сгруппированы по сериалу.
+
+`/shedule/my/`: ближайшие серии сериалов из «Мои», около недели вперёд, плюс пара прошедших дней. Поля: `sid`, `soap`, `soap_ru`, `covers`, `season`, `episode`, `short` (`s02e06`), `title` (бывает `TBA`), `date` (`DD.MM.YYYY`). `files` нет.
+
+`/shedule/<sid>/`: все серии сериала, прошлые и будущие, от новых к старым. Поля: `season`, `episode`, `short`, `title`, `date`.
+
 В `files` у каждого файла:
 - `eid`, `hash`;
 - `quality`: 1 SD, 2 HD, 3 FullHD, 4 UltraHD, бывает строкой;

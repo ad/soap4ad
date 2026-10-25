@@ -14,7 +14,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 final class HomeScreen implements Screen {
     private static final String TAG = "SoapTv";
@@ -55,11 +58,13 @@ final class HomeScreen implements Screen {
         new Thread(() -> {
             try {
                 addRow(mine, "Недавние", recent(api.array("/episodes/continue")));
+                addRow(mine, "Новые серии", fresh(api.array("/episodes/new")));
                 addRow(mine, "Новые сериалы", series(Data.sorted(Data.cached(api, "/soap/?nodesc"), "sid"), 30));
                 addRow(mine, "Новые фильмы", movies(Data.sorted(Data.cached(api, "/movies/"), "id"), 30));
                 addRow(mine, "Популярные сериалы", series(Data.list(Data.cached(api, "/soap/top/all")), 30));
                 addRow(mine, "Популярные фильмы", movies(Data.list(Data.cached(api, "/movies/popular")), 32));
                 addRow(mine, "Мои сериалы", unwatched(Data.sorted(api.array("/soap/my/?nodesc"), "updated")));
+                addRow(mine, "Скоро", upcoming(api.array("/shedule/my/")));
             } catch (Exception e) {
                 Log.w(TAG, "home failed: " + e.getMessage());
                 host.runOnUiThread(() -> {
@@ -77,14 +82,57 @@ final class HomeScreen implements Screen {
 
     private List<Cards.Card> recent(JSONArray array) {
         List<Cards.Card> cards = new ArrayList<>();
-        for (JSONObject e : Data.sorted(array, "played")) {
-            String ru = e.optString("soap_ru");
-            String name = Api.text(ru.isEmpty() ? e.optString("soap") : ru);
-            int sid = e.optInt("sid");
-            cards.add(new Cards.Card(Api.cover(sid), name, null, null, "S" + e.optInt("season") + "E" + e.optInt("episode"),
-                () -> Playback.start(host, host.api(), sid, name, e.optJSONArray("files")), () -> host.openSoap(sid, name)));
+        for (JSONObject e : Data.sorted(array, "played")) cards.add(episode(e, number(e), true));
+        return cards;
+    }
+
+    private List<Cards.Card> fresh(JSONArray array) {
+        List<Cards.Card> cards = new ArrayList<>();
+        List<JSONObject> items = Data.list(array);
+        items.sort((a, b) -> b.optString("first_aired").compareTo(a.optString("first_aired")));
+        for (List<JSONObject> group : bySoap(items)) {
+            JSONObject e = group.get(0);
+            String date = e.optString("first_aired");
+            String day = date.length() == 10 ? date.substring(8) + "." + date.substring(5, 7) + " · " : "";
+            cards.add(group.size() == 1 ? episode(e, day + number(e), true) : episode(e, day + episodes(group.size()), false));
         }
         return cards;
+    }
+
+    private List<Cards.Card> upcoming(JSONArray array) {
+        List<Cards.Card> cards = new ArrayList<>();
+        for (List<JSONObject> group : bySoap(Data.list(array))) {
+            JSONObject e = group.get(0);
+            String date = e.optString("date");
+            String day = date.length() >= 5 ? date.substring(0, 5) + " · " : "";
+            cards.add(episode(e, day + (group.size() == 1 ? number(e) : episodes(group.size())), false));
+        }
+        return cards;
+    }
+
+    private static Collection<List<JSONObject>> bySoap(List<JSONObject> items) {
+        Map<Integer, List<JSONObject>> groups = new LinkedHashMap<>();
+        for (JSONObject e : items) groups.computeIfAbsent(e.optInt("sid"), sid -> new ArrayList<>()).add(e);
+        return groups.values();
+    }
+
+    private static String number(JSONObject e) {
+        return "S" + e.optInt("season") + "E" + e.optInt("episode");
+    }
+
+    static String episodes(int n) {
+        int ones = n % 10;
+        String word = n % 100 / 10 == 1 || ones == 0 || ones >= 5 ? "серий" : ones == 1 ? "серия" : "серии";
+        return n + " " + word;
+    }
+
+    private Cards.Card episode(JSONObject e, String caption, boolean playable) {
+        String ru = e.optString("soap_ru");
+        String name = Api.text(ru.isEmpty() ? e.optString("soap") : ru);
+        int sid = e.optInt("sid");
+        Runnable open = () -> host.openSoap(sid, name);
+        return new Cards.Card(Api.cover(sid), name, null, null, caption,
+            playable ? () -> Playback.start(host, host.api(), sid, name, e.optJSONArray("files")) : open, playable ? open : null);
     }
 
     private List<Cards.Card> series(List<JSONObject> items, int limit) {

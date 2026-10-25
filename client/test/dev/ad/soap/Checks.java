@@ -12,6 +12,8 @@ public class Checks {
         check(Playback.score(4, 3, 4, 1) > Playback.score(4, 4, 4, 1), "nearest above the picked quality");
         check(Playback.qualityName(3).equals("FullHD") && Playback.qualityName(0).equals("—"), "quality names");
         check(Update.build("v0.1.12") == 12 && Update.build("v1") == -1 && Update.build("") == -1, "release tag build number");
+        check(HomeScreen.episodes(2).equals("2 серии") && HomeScreen.episodes(5).equals("5 серий")
+            && HomeScreen.episodes(11).equals("11 серий") && HomeScreen.episodes(21).equals("21 серия"), "episode count plural");
         System.out.println("client checks ok");
     }
 
