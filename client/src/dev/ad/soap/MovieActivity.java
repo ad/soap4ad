@@ -47,7 +47,7 @@ public class MovieActivity extends Activity {
         ImageView poster = new ImageView(this);
         poster.setScaleType(ImageView.ScaleType.CENTER_CROP);
         poster.setBackgroundColor(0xFF22262D);
-        root.addView(poster, new LinearLayout.LayoutParams(dp(200), dp(300)));
+        root.addView(poster, new LinearLayout.LayoutParams(dp(240), dp(240)));
         poster.setTag("poster");
 
         LinearLayout right = new LinearLayout(this);

@@ -16,8 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 final class Cards {
-    static final int WIDTH = 112;
-    static final int POSTER = 168;
+    static final int SIZE = 132;
     private static final int DIM_TEXT = 0xFFB6BBC4;
 
     private Cards() {}
@@ -75,7 +74,7 @@ final class Cards {
             low.setMargins(dp(context, 4), 0, 0, dp(context, 4));
             box.addView(pill(context, card.caption, 0xB0000000), low);
         }
-        view.addView(box, new LinearLayout.LayoutParams(dp(context, WIDTH), dp(context, POSTER)));
+        view.addView(box, new LinearLayout.LayoutParams(dp(context, SIZE), dp(context, SIZE)));
 
         TextView title = new TextView(context);
         title.setText(card.title);
@@ -84,7 +83,7 @@ final class Cards {
         title.setPadding(dp(context, 2), dp(context, 4), dp(context, 2), 0);
         title.setLines(2);
         title.setEllipsize(TextUtils.TruncateAt.END);
-        view.addView(title, new LinearLayout.LayoutParams(dp(context, WIDTH), dp(context, 38)));
+        view.addView(title, new LinearLayout.LayoutParams(dp(context, SIZE), dp(context, 38)));
 
         view.setOnClickListener(v -> card.onClick.run());
         if (card.onLongClick != null) {

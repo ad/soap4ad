@@ -65,7 +65,7 @@ public class SoapActivity extends Activity {
         ImageView poster = new ImageView(this);
         poster.setScaleType(ImageView.ScaleType.CENTER_CROP);
         poster.setBackgroundColor(0xFF2A2A2A);
-        left.addView(poster, new LinearLayout.LayoutParams(dp(200), dp(300)));
+        left.addView(poster, new LinearLayout.LayoutParams(dp(240), dp(240)));
         Images.load(poster, Api.cover(sid));
         title = new TextView(this);
         title.setText(getIntent().getStringExtra("title"));
