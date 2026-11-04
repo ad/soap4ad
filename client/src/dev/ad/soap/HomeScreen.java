@@ -299,7 +299,7 @@ final class HomeScreen implements Screen {
         int sid = e.optInt("sid");
         Runnable open = () -> host.openSoap(sid, name);
         return new Cards.Card(Api.cover(sid), name, null, null, caption,
-            playable ? () -> Playback.start(host, host.api(), sid, name, e.optJSONArray("files")) : open, playable ? open : null);
+            playable ? () -> Playback.start(host, host.api(), sid, name, e.optJSONArray("files"), false) : open, playable ? open : null);
     }
 
     private List<Cards.Card> series(List<JSONObject> items, int limit) {

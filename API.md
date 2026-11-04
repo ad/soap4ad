@@ -40,6 +40,9 @@
 - `status`: 0 идёт, 1 пауза, 2 закрыт.
 - `watching` (0/1): сериал в «Мои».
 - `unwatched`: число непросмотренных серий.
+- `episode_runtime`: средняя длительность серии в минутах, строкой. У серий своей длительности нет.
+
+Серия в `/episodes/<sid>`: `watched` (0/1) и `start_from` (секунды). Досмотренная серия остаётся с `watched=1` и `start_from` у титров, иногда больше `episode_runtime`.
 
 Запись «продолжить просмотр»: `soap`, `soap_ru`, `title_ru`, `title_en`, `sid`, `season_id`, `season`, `episode`, `played` (время запуска), `time`, `covers`, `files`.
 

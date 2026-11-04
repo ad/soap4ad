@@ -17,7 +17,7 @@ final class Playback {
 
     private Playback() {}
 
-    static void start(Activity activity, Api api, int soapId, String title, JSONArray files) {
+    static void start(Activity activity, Api api, int soapId, String title, JSONArray files, boolean fromStart) {
         JSONObject file = pickFile(activity, files, 0);
         if (file == null) {
             Toast.makeText(activity, "Нет доступных файлов", Toast.LENGTH_SHORT).show();
@@ -27,7 +27,7 @@ final class Playback {
             try {
                 JSONObject response = stream(api, soapId, file);
                 Intent intent = new Intent(activity, PlayerActivity.class).putExtra("url", response.optString("stream"))
-                    .putExtra("eid", file.optInt("eid")).putExtra("start", startMs(response)).putExtra("sid", soapId).putExtra("title", title);
+                    .putExtra("eid", file.optInt("eid")).putExtra("start", fromStart ? 0 : startMs(response)).putExtra("sid", soapId).putExtra("title", title);
                 activity.runOnUiThread(() -> activity.startActivity(intent));
             } catch (Exception e) {
                 Log.w(TAG, "play failed: " + e.getMessage());

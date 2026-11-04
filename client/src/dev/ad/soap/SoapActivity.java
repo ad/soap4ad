@@ -44,6 +44,7 @@ public class SoapActivity extends Activity {
     private TextView favorite;
     private TextView mine;
     private int year;
+    private int runtime;
     private boolean watching;
 
     @Override
@@ -173,6 +174,7 @@ public class SoapActivity extends Activity {
         if (info != null) {
             title.setText(Data.title(info));
             year = info.optInt("year");
+            runtime = info.optInt("episode_runtime") * 60;
             watching = Data.flag(info, "watching");
             paintMine();
             mine.setEnabled(true);
@@ -313,7 +315,7 @@ public class SoapActivity extends Activity {
         for (JSONObject e : shown) {
             View row = episodeRow(e, episodeList.getChildCount());
             episodeList.addView(row);
-            if (target == null && e.optInt("start_from") > 0) target = row;
+            if (target == null && resume(e) > 0) target = row;
             if (firstOpen == null && e.optInt("watched") != 1) firstOpen = row;
         }
         if (episodeList.getChildCount() > 0 && !seasonViews.isEmpty()) {
@@ -328,8 +330,14 @@ public class SoapActivity extends Activity {
         if (focus && target != null) target.requestFocus();
     }
 
-    private View episodeRow(JSONObject e, int index) {
+    // The server keeps start_from after a watched episode reaches the credits.
+    private int resume(JSONObject e) {
         int resume = e.optInt("start_from");
+        return e.optInt("watched") == 1 && runtime > 0 && resume >= runtime * 0.85 ? 0 : resume;
+    }
+
+    private View episodeRow(JSONObject e, int index) {
+        int resume = resume(e);
         boolean watched = e.optInt("watched") == 1 && resume == 0;
         LinearLayout row = new LinearLayout(this);
         row.setId(View.generateViewId());
@@ -371,7 +379,7 @@ public class SoapActivity extends Activity {
             status.setTextColor(watched ? 0xFF6FBF73 : 0xFF8CB4E8);
             row.addView(status);
         }
-        row.setOnClickListener(v -> Playback.start(this, api, sid, this.title.getText().toString(), e.optJSONArray("files")));
+        row.setOnClickListener(v -> Playback.start(this, api, sid, this.title.getText().toString(), e.optJSONArray("files"), watched));
         row.setOnLongClickListener(v -> {
             marks(e, index);
             return true;
