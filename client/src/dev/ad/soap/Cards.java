@@ -17,6 +17,8 @@ import android.widget.TextView;
 
 final class Cards {
     static final int SIZE = 132;
+    private static final int PAD = 5;
+    private static final int GAP = 3;
     private static final int DIM_TEXT = 0xFFB6BBC4;
 
     private Cards() {}
@@ -45,13 +47,17 @@ final class Cards {
         return Math.round(v * context.getResources().getDisplayMetrics().density);
     }
 
+    static int width(Context context) {
+        return dp(context, SIZE) + 2 * dp(context, PAD) + dp(context, GAP);
+    }
+
     static View view(Context context, Card card, Runnable onFocus) {
         LinearLayout view = new LinearLayout(context);
         view.setOrientation(LinearLayout.VERTICAL);
         view.setFocusable(true);
-        view.setPadding(dp(context, 5), dp(context, 5), dp(context, 5), dp(context, 5));
+        view.setPadding(dp(context, PAD), dp(context, PAD), dp(context, PAD), dp(context, PAD));
         LinearLayout.LayoutParams margin = new LinearLayout.LayoutParams(-2, -2);
-        margin.setMarginEnd(dp(context, 3));
+        margin.setMarginEnd(dp(context, GAP));
         view.setLayoutParams(margin);
 
         FrameLayout box = new FrameLayout(context);

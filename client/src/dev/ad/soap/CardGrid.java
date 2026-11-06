@@ -12,11 +12,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class CardGrid {
-    private static final int COLUMNS = 7;
     private static final int FIRST_ROWS = 14;
     private static final int MORE_ROWS = 6;
 
     private final Context context;
+    private final int columns;
     private final ScrollView scroll;
     private final LinearLayout rows;
     private List<Cards.Card> cards = new ArrayList<>();
@@ -24,9 +24,13 @@ final class CardGrid {
 
     CardGrid(Context context) {
         this.context = context;
+        int card = Cards.width(context);
+        int width = context.getResources().getDisplayMetrics().widthPixels;
+        columns = Math.max(1, (width - Cards.dp(context, 8)) / card);
+        int side = Math.max(0, (width - columns * card) / 2);
         rows = new LinearLayout(context);
         rows.setOrientation(LinearLayout.VERTICAL);
-        rows.setPadding(Cards.dp(context, 4), Cards.dp(context, 12), Cards.dp(context, 4), Cards.dp(context, 12));
+        rows.setPadding(side, Cards.dp(context, 12), side, Cards.dp(context, 12));
         scroll = new ScrollView(context);
         scroll.setFillViewport(true);
         scroll.setFocusable(false);
@@ -58,10 +62,10 @@ final class CardGrid {
         header.setTypeface(Typeface.DEFAULT_BOLD);
         header.setPadding(Cards.dp(context, 8), Cards.dp(context, 8), 0, Cards.dp(context, 4));
         rows.addView(header);
-        for (int i = 0; i < list.size(); i += COLUMNS) {
+        for (int i = 0; i < list.size(); i += columns) {
             LinearLayout row = new LinearLayout(context);
             row.setClipChildren(false);
-            for (Cards.Card card : list.subList(i, Math.min(list.size(), i + COLUMNS))) row.addView(Cards.view(context, card, null));
+            for (Cards.Card card : list.subList(i, Math.min(list.size(), i + columns))) row.addView(Cards.view(context, card, null));
             rows.addView(row);
         }
     }
@@ -77,11 +81,11 @@ final class CardGrid {
     }
 
     private void more(int count) {
-        int end = Math.min(cards.size(), shown + count * COLUMNS);
+        int end = Math.min(cards.size(), shown + count * columns);
         while (shown < end) {
             LinearLayout row = new LinearLayout(context);
             row.setClipChildren(false);
-            for (int i = 0; i < COLUMNS && shown < cards.size(); i++, shown++) {
+            for (int i = 0; i < columns && shown < cards.size(); i++, shown++) {
                 int index = shown;
                 row.addView(Cards.view(context, cards.get(index), () -> focused(index)));
             }
@@ -90,6 +94,6 @@ final class CardGrid {
     }
 
     private void focused(int index) {
-        if (shown < cards.size() && index >= shown - 2 * COLUMNS) more(MORE_ROWS);
+        if (shown < cards.size() && index >= shown - 2 * columns) more(MORE_ROWS);
     }
 }

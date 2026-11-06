@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -63,7 +64,9 @@ final class GridScreen implements Screen {
         HorizontalScrollView chipScroll = new HorizontalScrollView(host);
         chipScroll.setHorizontalScrollBarEnabled(false);
         chipScroll.setClipChildren(false);
+        chipScroll.setFillViewport(true);
         LinearLayout chips = new LinearLayout(host);
+        chips.setGravity(Gravity.CENTER_HORIZONTAL);
         chips.setPadding(Cards.dp(host, 20), Cards.dp(host, 8), Cards.dp(host, 20), Cards.dp(host, 8));
         String[] modes = {"Все", "Мои", "4K UHD"};
         SharedPreferences prefs = host.prefs();
