@@ -72,6 +72,10 @@ final class Api {
             return new JSONArray(request(path, null, token, session));
         } catch (org.json.JSONException e) {
             throw new IOException(e);
+        } catch (IOException e) {
+            // The server answers some empty lists, such as a new profile's /episodes/continue, with 404 "not found or empty".
+            if (String.valueOf(e.getMessage()).contains("not found or empty")) return new JSONArray();
+            throw e;
         }
     }
 
