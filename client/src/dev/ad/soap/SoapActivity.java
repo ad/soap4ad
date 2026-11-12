@@ -209,31 +209,35 @@ public class SoapActivity extends Activity {
         int s = e.optInt("season");
         int number = e.optInt("episode");
         boolean watched = e.optInt("watched") == 1;
-        String[] labels = {
-            watched ? "Снять отметку с серии " + number : "Отметить серию " + number + " просмотренной",
-            "Отметить сезон " + s + " просмотренным",
-            "Отметить весь сериал просмотренным",
-        };
+        boolean seasonDone = seasonWatched(s);
+        List<String> labels = new ArrayList<>();
+        List<Runnable> actions = new ArrayList<>();
+        labels.add(watched ? "Снять отметку с серии " + number : "Отметить серию " + number + " просмотренной");
+        actions.add(() -> Actions.post(this, api, () -> mark(index, x -> x == e, !watched),
+            "/episodes/" + (watched ? "unwatch/" : "watch/") + sid + "/" + s + "/" + number + "/",
+            "sid=" + sid + "&season=" + s + "&episode=" + number));
+        if (!seasonDone) {
+            labels.add("Отметить сезон " + s + " просмотренным");
+            actions.add(() -> Actions.post(this, api, () -> mark(index, x -> x.optInt("season") == s, true), seasonMark(s, true)));
+        }
+        if (episodes.stream().anyMatch(x -> x.optInt("season") == s && x.optInt("watched") == 1)) {
+            labels.add("Снять отметку с сезона " + s);
+            actions.add(() -> Actions.post(this, api, () -> mark(index, x -> x.optInt("season") == s, false), seasonMark(s, false)));
+        }
+        labels.add("Отметить весь сериал просмотренным");
+        actions.add(() -> {
+            List<String> calls = new ArrayList<>();
+            for (int each : seasons) calls.addAll(List.of(seasonMark(each, true)));
+            Actions.post(this, api, () -> mark(index, x -> true, true), calls.toArray(new String[0]));
+        });
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(title.getText())
-            .setItems(labels, (dialog, which) -> {
-                if (which == 0) {
-                    Actions.post(this, api, () -> mark(index, x -> x == e, !watched),
-                        "/episodes/" + (watched ? "unwatch/" : "watch/") + sid + "/" + s + "/" + number + "/",
-                        "sid=" + sid + "&season=" + s + "&episode=" + number);
-                } else if (which == 1) {
-                    Actions.post(this, api, () -> mark(index, x -> x.optInt("season") == s, true), seasonWatch(s));
-                } else {
-                    List<String> calls = new ArrayList<>();
-                    for (int each : seasons) calls.addAll(List.of(seasonWatch(each)));
-                    Actions.post(this, api, () -> mark(index, x -> true, true), calls.toArray(new String[0]));
-                }
-            })
+            .setItems(labels.toArray(new String[0]), (dialog, which) -> actions.get(which).run())
             .show();
     }
 
-    private String[] seasonWatch(int s) {
-        return new String[] {"/episodes/watch/full/" + sid + "/" + s + "/", "sid=" + sid + "&season=" + s};
+    private String[] seasonMark(int s, boolean watched) {
+        return new String[] {"/episodes/" + (watched ? "watch" : "unwatch") + "/full/" + sid + "/" + s + "/", "sid=" + sid + "&season=" + s};
     }
 
     private void mark(int index, Predicate<JSONObject> which, boolean watched) {
