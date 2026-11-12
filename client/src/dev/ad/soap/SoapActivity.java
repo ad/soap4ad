@@ -36,6 +36,7 @@ public class SoapActivity extends Activity {
     private final List<TextView> seasonViews = new ArrayList<>();
     private final List<Integer> seasons = new ArrayList<>();
     private int season = -1;
+    private int wantedEpisode = -1;
     private LinearLayout seasonRow;
     private LinearLayout episodeList;
     private TextView about;
@@ -53,6 +54,8 @@ public class SoapActivity extends Activity {
         android.content.SharedPreferences prefs = getSharedPreferences("auth", MODE_PRIVATE);
         api = new Api(prefs.getString("token", ""), prefs.getString("session", ""));
         sid = getIntent().getIntExtra("sid", 0);
+        season = getIntent().getIntExtra("season", -1);
+        wantedEpisode = getIntent().getIntExtra("episode", -1);
 
         LinearLayout root = new LinearLayout(this);
         root.setBackgroundColor(0xFF0F1318);
@@ -199,6 +202,7 @@ public class SoapActivity extends Activity {
         if (season < 0 || !found.contains(season)) season = firstOpenSeason();
         buildSeasons();
         buildEpisodes(true);
+        wantedEpisode = -1;
     }
 
     private void paintMine() {
@@ -319,7 +323,7 @@ public class SoapActivity extends Activity {
         for (JSONObject e : shown) {
             View row = episodeRow(e, episodeList.getChildCount());
             episodeList.addView(row);
-            if (target == null && resume(e) > 0) target = row;
+            if (e.optInt("episode") == wantedEpisode || target == null && resume(e) > 0) target = row;
             if (firstOpen == null && e.optInt("watched") != 1) firstOpen = row;
         }
         if (episodeList.getChildCount() > 0 && !seasonViews.isEmpty()) {

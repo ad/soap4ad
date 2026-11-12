@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -28,13 +29,17 @@ final class SearchScreen implements Screen {
     private final CardGrid grid;
     private JSONArray series;
     private JSONArray movies;
+    private final Runnable remote = this::searchEpisodes;
+    private String episodesQuery = "";
+    private List<Cards.Card> episodeCards = List.of();
+    private boolean nothingFound;
 
     SearchScreen(MainActivity host) {
         this.host = host;
         root = new LinearLayout(host);
         root.setOrientation(LinearLayout.VERTICAL);
         input = new EditText(host);
-        input.setHint("Название сериала или фильма");
+        input.setHint("Название сериала, серии или фильма");
         input.setHintTextColor(0xFF6E7681);
         input.setTextColor(0xFFFFFFFF);
         input.setTextSize(18);
@@ -100,9 +105,14 @@ final class SearchScreen implements Screen {
         }).start();
     }
 
+    private String query() {
+        return input.getText().toString().trim().toLowerCase(Locale.ROOT);
+    }
+
     private void search() {
-        String query = input.getText().toString().trim().toLowerCase(Locale.ROOT);
+        String query = query();
         grid.clear();
+        root.removeCallbacks(remote);
         if (series == null) {
             grid.message("Загрузка каталога…");
             return;
@@ -111,6 +121,8 @@ final class SearchScreen implements Screen {
             grid.message("Введите хотя бы две буквы");
             return;
         }
+        if (!query.equals(episodesQuery)) root.postDelayed(remote, 500);
+        List<Cards.Card> episodes = query.equals(episodesQuery) ? episodeCards : List.of();
         List<Cards.Card> found = new ArrayList<>();
         for (JSONObject s : Data.list(series)) {
             if (matches(s, query, "title") && found.size() < LIMIT) found.add(Library.seriesCard(host, s, null));
@@ -119,12 +131,47 @@ final class SearchScreen implements Screen {
         for (JSONObject m : Data.list(movies)) {
             if (matches(m, query, "title_original") && films.size() < LIMIT) films.add(Library.movieCard(host, m));
         }
-        if (found.isEmpty() && films.isEmpty()) {
+        nothingFound = found.isEmpty() && films.isEmpty() && episodes.isEmpty();
+        if (nothingFound) {
             grid.message("Ничего не найдено");
             return;
         }
         if (!found.isEmpty()) grid.section("Сериалы · " + found.size(), found);
         if (!films.isEmpty()) grid.section("Фильмы · " + films.size(), films);
+        if (!episodes.isEmpty()) grid.section("Серии · " + episodes.size(), episodes);
+    }
+
+    private void searchEpisodes() {
+        String query = query();
+        Api api = host.api();
+        new Thread(() -> {
+            try {
+                JSONArray found = api.object("/search/?q=" + URLEncoder.encode(query, "UTF-8")).optJSONArray("episodes");
+                List<Cards.Card> cards = new ArrayList<>();
+                if (found != null) for (JSONObject e : Data.list(found)) cards.add(episodeCard(e));
+                host.runOnUiThread(() -> {
+                    if (!query.equals(query())) return;
+                    episodesQuery = query;
+                    episodeCards = cards;
+                    if (cards.isEmpty()) return;
+                    // Appending keeps the focus of someone already browsing the title results.
+                    if (nothingFound) search();
+                    else grid.section("Серии · " + cards.size(), cards);
+                });
+            } catch (Exception e) {
+                Log.w(TAG, "episode search failed: " + e.getMessage());
+            }
+        }).start();
+    }
+
+    private Cards.Card episodeCard(JSONObject e) {
+        int sid = e.optInt("sid");
+        String ru = e.optString("soap_ru");
+        String name = Api.text(ru.isEmpty() ? e.optString("soap_en") : ru);
+        int season = e.optInt("season");
+        int episode = e.optInt("episode");
+        return new Cards.Card(Data.cover(e, sid), name, null, null, "S" + season + "E" + episode + " · " + Data.episodeTitle(e),
+            () -> host.openSoap(sid, name, season, episode), null);
     }
 
     private void paintBox(boolean focused) {

@@ -120,7 +120,12 @@ public class MainActivity extends Activity {
     }
 
     void openSoap(int sid, String title) {
-        startActivity(new Intent(this, SoapActivity.class).putExtra("sid", sid).putExtra("title", title));
+        openSoap(sid, title, -1, -1);
+    }
+
+    void openSoap(int sid, String title, int season, int episode) {
+        startActivity(new Intent(this, SoapActivity.class).putExtra("sid", sid).putExtra("title", title)
+            .putExtra("season", season).putExtra("episode", episode));
     }
 
     void openMovie(int id, String title) {
