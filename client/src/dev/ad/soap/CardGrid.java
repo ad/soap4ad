@@ -21,6 +21,7 @@ final class CardGrid {
     private final LinearLayout rows;
     private List<Cards.Card> cards = new ArrayList<>();
     private int shown;
+    private int focusIndex;
 
     CardGrid(Context context) {
         this.context = context;
@@ -42,9 +43,25 @@ final class CardGrid {
     }
 
     void show(List<Cards.Card> list) {
-        clear();
+        if (!rows.hasFocus() || list.isEmpty()) {
+            clear();
+            cards = list;
+            more(FIRST_ROWS);
+            return;
+        }
+        // Old rows go only after focus moves to the new ones: losing focus lands it on the Home tab, which switches to it.
+        int target = target(list, cards.get(focusIndex).title);
+        int oldRows = rows.getChildCount();
         cards = list;
-        more(FIRST_ROWS);
+        shown = 0;
+        more(Math.max(Math.max(FIRST_ROWS, oldRows), target / columns + 2));
+        ((LinearLayout) rows.getChildAt(oldRows + target / columns)).getChildAt(target % columns).requestFocus();
+        rows.removeViews(0, oldRows);
+    }
+
+    private int target(List<Cards.Card> list, String title) {
+        for (int i = 0; i < list.size(); i++) if (list.get(i).title.equals(title)) return i;
+        return Math.min(focusIndex, list.size() - 1);
     }
 
     void clear() {
@@ -94,6 +111,7 @@ final class CardGrid {
     }
 
     private void focused(int index) {
+        focusIndex = index;
         if (shown < cards.size() && index >= shown - 2 * columns) more(MORE_ROWS);
     }
 }
