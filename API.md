@@ -31,9 +31,11 @@
 | `GET /soap/description/<sid>` | описание, сеть, страна, жанры, лайки, статус |
 | `GET /soap/genres`, `/soap/genre/<g>/ids/` | жанры и id по жанру |
 | `GET /episodes/<sid>?nodesc` | серии сериала |
-| `GET /episodes/continue` | «продолжить просмотр», 10 записей |
+| `GET /episodes/continue` | «продолжить просмотр», до 10 записей |
 | `GET /episodes/new` | последние вышедшие серии |
 | `GET /shedule/<sid>`, `/shedule/my/` | расписание (в API так, с опечаткой) |
+| `GET /search/?q=<текст>` | поиск по сериалам, сериям, фильмам и людям |
+| `GET /comments/<sid>/<season>/<episode>/` | комментарии к серии |
 
 Поля сериала: `sid`, `title`, `title_ru`, `year`, `likes`, `episode_runtime`, `country`, `status`, `network`, `description`, `imdb_id`, `imdb_rating`, `kinopoisk_id`, `tvdb_id`, `tvmaze_id`, `soap_rating`, `updated`, `4k`, `trailers`, `watching`, `unwatched`, `total_episodes`, `genres`, `covers`.
 
@@ -42,9 +44,23 @@
 - `unwatched`: число непросмотренных серий.
 - `episode_runtime`: средняя длительность серии в минутах, строкой. У серий своей длительности нет.
 
-Серия в `/episodes/<sid>`: `watched` (0/1) и `start_from` (секунды). Досмотренная серия остаётся с `watched=1` и `start_from` у титров, иногда больше `episode_runtime`.
+`/soap/description/<sid>` вдобавок отдаёт `link` (страница на сайте), `reviews` (число), `soap_votes`, `imdb_votes`, `kinopoisk_rating`, `kinopoisk_votes`, `user_rating` (оценка пользователя, `null` без оценки) и `actors`: `person_id`, `person_en`, `person_image_medium`, `person_image_original`, `character_id`, `character_en` и другие.
 
-Запись «продолжить просмотр»: `soap`, `soap_ru`, `title_ru`, `title_en`, `sid`, `season_id`, `season`, `episode`, `played` (время запуска), `time`, `covers`, `files`.
+`/episodes/<sid>` отдаёт объект `{episodes, covers}`. Поля серии:
+- `watched` (0/1) и `start_from` (секунды). Досмотренная серия остаётся с `watched=1` и `start_from` у титров, иногда больше `episode_runtime`;
+- `title_en`, `title_ru`, `spoiler` (краткое описание), `first_aired`;
+- `rating` (число, средняя оценка), `votes`, `my_rating` (0 без оценки), `comments` (число комментариев строкой);
+- `screenshots.small|big`: кадр из серии, `https://soap4youand.me/assets/screenshots/<sid>/big/<id>.jpg`. У старых серий бывает `null`.
+
+Запись «продолжить просмотр»: `soap`, `soap_ru`, `title_ru`, `title_en`, `sid`, `season_id`, `season`, `episode`, `played` (время запуска), `time`, `first_aired`, `spoiler`, `covers`, `files`.
+
+`/search/?q=<текст>` ищет по подстроке, в том числе в названиях серий. Другие имена параметра (`query`, `s`) дают пустой ответ. Ответ `{series, episodes, movies, persons}`, у каждой записи `score`:
+- `series`: поля сериала плюс `imdb_votes`, `kinopoisk_rating`, `kinopoisk_votes`, `soap_votes`;
+- `episodes`: `sid`, `soap_en`, `soap_ru`, `season`, `season_id`, `episode`, `title_en`, `title_ru`, `covers` сезона, не больше 20;
+- `movies`: поля фильма из списка;
+- `persons` на пробных запросах был пуст.
+
+Комментарий в `/comments/<sid>/<season>/<episode>/`: `cid`, `parent` (`"0"` или `cid` родителя), `date` (unix-время), `text`, `rating`, `login`, `my` (0/1, свой), `voted`. У серии без комментариев ответ `[]`.
 
 `/episodes/new`: 15 последних серий. У тестового аккаунта все из сериалов в «Мои», похоже, лента персональная. Поля как у «продолжить просмотр», вместо `played` и `time` идут `first_aired` (`YYYY-MM-DD`) и `spoiler`. Числа строками. Порядок не по дате: записи сгруппированы по сериалу.
 
@@ -65,9 +81,11 @@
 |---|---|
 | `POST /soap/watch/<sid>/`, `/soap/unwatch/<sid>/` | `sid`. Добавить в «Мои» и убрать |
 | `POST /episodes/watch/<sid>/<season>/<episode>/`, `unwatch` | `sid&season&episode`, не проверялось |
-| `POST /episodes/watch/full/<sid>/<season>/` | `sid&season`, весь сезон, не проверялось |
+| `POST /episodes/watch/full/<sid>/<season>/`, `/episodes/unwatch/full/<sid>/<season>/` | `sid&season`, весь сезон. Ответ `{"ok":1}` |
 
-Запрос, снимающий отметку с целого сезона, неизвестен.
+`watch/full` обнуляет `start_from` у серий сезона, а `unwatch/full` его не трогает. Позицию досмотренной серии `savets` после этого не возвращает.
+
+Оценки и комментарии в soap4u идут через пути `/rate/episode/`, `/rate/comment/`, `/rating/`, `/movies/rate/`, `/rate/soap/` и `…/add/`. Формат тела не известен, запросы не проверялись.
 
 ### Поток серии
 
