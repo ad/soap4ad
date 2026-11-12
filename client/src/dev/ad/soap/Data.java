@@ -83,6 +83,11 @@ final class Data {
         return title;
     }
 
+    static String plural(int n, String one, String few, String many) {
+        int ones = n % 10;
+        return n + " " + (n % 100 / 10 == 1 || ones == 0 || ones >= 5 ? many : ones == 1 ? one : few);
+    }
+
     static String episodeTitle(JSONObject e) {
         String ru = e.optString("title_ru");
         return Api.text(ru.isEmpty() ? e.optString("title_en") : ru);

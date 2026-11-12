@@ -288,9 +288,7 @@ final class HomeScreen implements Screen {
     }
 
     static String episodes(int n) {
-        int ones = n % 10;
-        String word = n % 100 / 10 == 1 || ones == 0 || ones >= 5 ? "серий" : ones == 1 ? "серия" : "серии";
-        return n + " " + word;
+        return Data.plural(n, "серия", "серии", "серий");
     }
 
     private Cards.Card episode(JSONObject e, String caption, boolean playable) {

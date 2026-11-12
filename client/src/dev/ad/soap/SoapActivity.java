@@ -340,6 +340,12 @@ public class SoapActivity extends Activity {
         return e.optInt("watched") == 1 && runtime > 0 && resume >= runtime * 0.85 ? 0 : resume;
     }
 
+    private static String shot(JSONObject e) {
+        JSONObject shots = e.optJSONObject("screenshots");
+        String url = shots == null ? "" : shots.optString("small");
+        return "null".equals(url) ? "" : url.replaceFirst("^http://", "https://");
+    }
+
     private View episodeRow(JSONObject e, int index) {
         int resume = resume(e);
         boolean watched = e.optInt("watched") == 1 && resume == 0;
@@ -366,23 +372,50 @@ public class SoapActivity extends Activity {
         number.setBackground(shape(resume > 0 ? 0xFF8CB4E8 : watched ? 0 : 0x338CB4E8, watched ? 0x33FFFFFF : 0, 10));
         row.addView(number, new LinearLayout.LayoutParams(dp(40), dp(40)));
 
+        LinearLayout text = new LinearLayout(this);
+        text.setOrientation(LinearLayout.VERTICAL);
         TextView label = new TextView(this);
         label.setText(Data.episodeTitle(e));
         label.setTextSize(18);
         label.setSingleLine(true);
         label.setEllipsize(TextUtils.TruncateAt.END);
         label.setTextColor(watched ? 0xFF6E7681 : 0xFFFFFFFF);
-        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(0, -2, 1f);
-        labelParams.setMargins(dp(16), 0, dp(16), 0);
-        row.addView(label, labelParams);
+        text.addView(label);
+        List<String> info = new ArrayList<>();
+        double rating = e.optDouble("rating", 0);
+        if (rating > 0) info.add(String.format(java.util.Locale.US, "★ %.1f", rating));
+        int comments = e.optInt("comments");
+        if (comments > 0) info.add(Data.plural(comments, "комментарий", "комментария", "комментариев"));
+        if (!info.isEmpty()) {
+            TextView line = new TextView(this);
+            line.setText(String.join("  ·  ", info));
+            line.setTextSize(13);
+            line.setTextColor(0xFF8B919A);
+            text.addView(line);
+        }
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, -2, 1f);
+        textParams.setMargins(dp(16), 0, dp(16), 0);
+        row.addView(text, textParams);
 
+        if (!shot(e).isEmpty()) {
+            ImageView frame = new ImageView(this);
+            frame.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            frame.setBackground(shape(0xFF2A2A2A, 0, 6));
+            frame.setClipToOutline(true);
+            frame.setAlpha(watched ? 0.5f : 1f);
+            row.addView(frame, new LinearLayout.LayoutParams(dp(96), dp(54)));
+            Images.load(frame, shot(e));
+        }
+
+        // A fixed width keeps the frames of all rows in one column.
+        TextView status = new TextView(this);
+        status.setTextSize(15);
+        status.setGravity(Gravity.END);
         if (resume > 0 || watched) {
-            TextView status = new TextView(this);
-            status.setTextSize(15);
             status.setText(watched ? "✓  просмотрено" : "▶  " + resume / 60 + ":" + String.format("%02d", resume % 60));
             status.setTextColor(watched ? 0xFF6FBF73 : 0xFF8CB4E8);
-            row.addView(status);
         }
+        row.addView(status, new LinearLayout.LayoutParams(dp(150), -2));
         row.setOnClickListener(v -> Playback.start(this, api, sid, this.title.getText().toString(), e.optJSONArray("files"), watched));
         row.setOnLongClickListener(v -> {
             marks(e, index);

@@ -14,6 +14,9 @@ public class Checks {
         check(Update.build("v0.1.12") == 12 && Update.build("v1") == -1 && Update.build("") == -1, "release tag build number");
         check(HomeScreen.episodes(2).equals("2 серии") && HomeScreen.episodes(5).equals("5 серий")
             && HomeScreen.episodes(11).equals("11 серий") && HomeScreen.episodes(21).equals("21 серия"), "episode count plural");
+        check(Data.plural(1, "комментарий", "комментария", "комментариев").equals("1 комментарий")
+            && Data.plural(3, "комментарий", "комментария", "комментариев").equals("3 комментария")
+            && Data.plural(112, "комментарий", "комментария", "комментариев").equals("112 комментариев"), "comment count plural");
         check(HomeScreen.order("").equals(java.util.List.of(HomeScreen.ROWS)), "default home order");
         java.util.List<String> order = HomeScreen.order("Скоро,Недавние,Скоро,Старая строка");
         check(order.size() == HomeScreen.ROWS.length && order.get(0).equals("Скоро") && order.get(1).equals("Недавние")
