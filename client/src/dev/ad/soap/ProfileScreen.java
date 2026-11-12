@@ -1,5 +1,6 @@
 package dev.ad.soap;
 
+import android.app.AlertDialog;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.util.Log;
@@ -13,7 +14,9 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 final class ProfileScreen implements Screen {
     private static final String TAG = "SoapTv";
@@ -77,6 +80,11 @@ final class ProfileScreen implements Screen {
 
         String login = host.prefs().getString("login", "");
         showName(login);
+        try {
+            row(1, "Версия приложения", host.getPackageManager().getPackageInfo(host.getPackageName(), 0).versionName);
+        } catch (Exception e) {
+            Log.w(TAG, "version failed: " + e.getMessage());
+        }
         load();
     }
 
@@ -99,19 +107,28 @@ final class ProfileScreen implements Screen {
         new Thread(() -> {
             try {
                 JSONObject account = api.object("/auth/check");
+                JSONObject selected = null;
+                if (account.optJSONArray("family") != null && account.optJSONArray("family").length() > 0) {
+                    try {
+                        selected = api.object("/family/").optJSONObject("selected");
+                    } catch (Exception e) {
+                        Log.w(TAG, "family failed: " + e.getMessage());
+                    }
+                }
+                String fid = selected == null ? "" : selected.optString("fid");
                 JSONArray mySeries = api.array("/soap/my/?nodesc");
                 JSONArray myMovies = api.array("/movies/my");
                 int unwatched = 0;
                 for (int i = 0; i < mySeries.length(); i++) unwatched += mySeries.getJSONObject(i).optInt("unwatched");
                 int fresh = unwatched;
-                host.runOnUiThread(() -> fill(account, mySeries.length(), fresh, myMovies.length()));
+                host.runOnUiThread(() -> fill(account, fid, mySeries.length(), fresh, myMovies.length()));
             } catch (Exception e) {
                 Log.w(TAG, "profile failed: " + e.getMessage());
             }
         }).start();
     }
 
-    private void fill(JSONObject account, int series, int unwatched, int movies) {
+    private void fill(JSONObject account, String selected, int series, int unwatched, int movies) {
         showName(account.optString("login"));
         long till = account.optLong("till");
         if (till > 0) {
@@ -120,17 +137,39 @@ final class ProfileScreen implements Screen {
                 + (days >= 0 ? " · осталось " + days + " дн." : " · истекла"));
             premium.setTextColor(days >= 0 ? 0xFF7FD18B : 0xFFFF8A80);
         }
+        List<String> names = new ArrayList<>(List.of("Без профиля"));
+        List<String> fids = new ArrayList<>(List.of(""));
         JSONArray family = account.optJSONArray("family");
-        String families = "";
         for (int i = 0; family != null && i < family.length(); i++) {
             JSONObject f = family.optJSONObject(i);
-            if (f != null) families += (families.isEmpty() ? "" : ", ") + f.optString("name");
+            if (f == null) continue;
+            names.add(f.optString("name"));
+            fids.add(f.optString("fid"));
         }
         int position = 1;
         position = row(position, "4K UHD", Data.flag(account, "4k") ? "доступно" : "нет");
-        if (!families.isEmpty()) position = row(position, "Семья", families);
+        if (fids.size() > 1) {
+            Button profile = new Button(host);
+            profile.setText("Профиль: " + names.get(Math.max(0, fids.indexOf(selected))));
+            profile.setOnClickListener(v -> chooseProfile(names, fids, selected));
+            panel.addView(profile, position++, new LinearLayout.LayoutParams(-1, -2));
+        }
         position = row(position, "Мои сериалы", series + (unwatched > 0 ? " · новых серий: " + unwatched : ""));
         row(position, "Мои фильмы", String.valueOf(movies));
+    }
+
+    private void chooseProfile(List<String> names, List<String> fids, String selected) {
+        String[] items = new String[names.size()];
+        for (int i = 0; i < items.length; i++) items[i] = (fids.get(i).equals(selected) ? "✓  " : "") + names.get(i);
+        new AlertDialog.Builder(host, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Профиль семьи")
+            .setItems(items, (dialog, which) -> {
+                String fid = fids.get(which);
+                if (fid.equals(selected)) return;
+                if (fid.isEmpty()) Actions.post(host, host.api(), host::reload, "/family/unset/", "fid=" + selected);
+                else Actions.post(host, host.api(), host::reload, "/family/set/" + fid + "/", "fid=" + fid);
+            })
+            .show();
     }
 
     private int row(int index, String label, String value) {

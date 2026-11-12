@@ -17,7 +17,9 @@
 - `POST /auth`, тело `login=…&password=…`. Ответ: `token`, `sid`, `till` (конец подписки), `success`, `message`.
 - `POST /logout` выходит.
 - `GET /auth/check` отдаёт `login`, `till` (секунды), `4k`, `family` (список с `fid`, `name`, `main`) и `family_test`.
-- `GET /family/` отдаёт `family` и `selected`.
+- `GET /family/` отдаёт `family`, `selected` (`{fid, name, main}` или `null`, если профиль не выбран) и `sync` (сколько лайков, серий и фильмов добавит или уберёт слияние с профилем).
+- Профиль семьи выбирается для сессии: `POST /family/set/<fid>/`, тело `fid=<fid>`, ответ `{"ok":1,"name":…}`. Сброс на «без профиля»: `POST /family/unset/`, проверено с телом `fid=<текущий fid>`, ответ `{"ok":1}`. От профиля зависят «Мои», отметки просмотра и «продолжить просмотр».
+- Пустой список сервер иногда отдаёт как 404 `{"ok":0,"code":404,"msg":"not found or empty"}`. Так отвечает, например, `/episodes/continue` у нового профиля.
 
 ## Сериалы
 

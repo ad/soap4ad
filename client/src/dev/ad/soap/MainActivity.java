@@ -152,6 +152,15 @@ public class MainActivity extends Activity {
         tabBar.setVisibility(View.VISIBLE);
         Arrays.fill(screens, null);
         showTab(0);
+        // Built early so the Profile tab opens with its data already loaded.
+        screens[4] = new ProfileScreen(this);
+    }
+
+    void reload() {
+        // Focus left inside the removed screen would jump to another tab and switch to it mid-removal.
+        tabViews[tab].requestFocus();
+        Arrays.fill(screens, null);
+        showTab(tab);
     }
 
     private void find(String title, int year, String type) {
