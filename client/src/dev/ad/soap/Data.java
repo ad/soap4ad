@@ -9,9 +9,13 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 final class Data {
     private static final long TTL_MS = 10 * 60_000L;
@@ -81,6 +85,26 @@ final class Data {
         } catch (org.json.JSONException ignored) {
         }
         return title;
+    }
+
+    static <T> void thread(List<T> items, Function<T, String> id, Function<T, String> parent,
+                           BiConsumer<T, Integer> out) {
+        Set<String> ids = new HashSet<>();
+        for (T t : items) ids.add(id.apply(t));
+        Map<String, List<T>> children = new HashMap<>();
+        for (T t : items) {
+            String p = parent.apply(t);
+            children.computeIfAbsent(ids.contains(p) && !p.equals(id.apply(t)) ? p : "", k -> new ArrayList<>()).add(t);
+        }
+        walk(children, "", 0, id, out);
+    }
+
+    private static <T> void walk(Map<String, List<T>> children, String key, int depth, Function<T, String> id,
+                                 BiConsumer<T, Integer> out) {
+        for (T t : children.getOrDefault(key, List.of())) {
+            out.accept(t, depth);
+            walk(children, id.apply(t), depth + 1, id, out);
+        }
     }
 
     static String plural(int n, String one, String few, String many) {

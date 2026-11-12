@@ -46,6 +46,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".CommentsActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout|uiMode"
             android:exported="false"

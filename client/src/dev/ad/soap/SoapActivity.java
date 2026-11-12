@@ -117,7 +117,7 @@ public class SoapActivity extends Activity {
         about.setPadding(0, dp(8), 0, 0);
         left.addView(about, new LinearLayout.LayoutParams(dp(300), -2));
         TextView hint = new TextView(this);
-        hint.setText("Удерживайте OK на серии, чтобы отметить просмотренное");
+        hint.setText("Удерживайте OK на серии: отметки просмотра и комментарии");
         hint.setTextSize(12);
         hint.setTextColor(0xFF6E7681);
         hint.setPadding(0, dp(8), 0, 0);
@@ -234,6 +234,16 @@ public class SoapActivity extends Activity {
             for (int each : seasons) calls.addAll(List.of(seasonMark(each, true)));
             Actions.post(this, api, () -> mark(index, x -> true, true), calls.toArray(new String[0]));
         });
+        int comments = e.optInt("comments");
+        if (comments > 0) {
+            labels.add("Комментарии · " + comments);
+            actions.add(() -> {
+                wantedEpisode = number;
+                startActivity(new android.content.Intent(this, CommentsActivity.class)
+                    .putExtra("sid", sid).putExtra("season", s).putExtra("episode", number)
+                    .putExtra("title", title.getText() + " · S" + s + "E" + number + " · " + Data.episodeTitle(e)));
+            });
+        }
         new AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
             .setTitle(title.getText())
             .setItems(labels.toArray(new String[0]), (dialog, which) -> actions.get(which).run())

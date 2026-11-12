@@ -17,6 +17,10 @@ public class Checks {
         check(Data.plural(1, "комментарий", "комментария", "комментариев").equals("1 комментарий")
             && Data.plural(3, "комментарий", "комментария", "комментариев").equals("3 комментария")
             && Data.plural(112, "комментарий", "комментария", "комментариев").equals("112 комментариев"), "comment count plural");
+        java.util.List<String> threaded = new java.util.ArrayList<>();
+        Data.thread(java.util.List.of("1:0", "2:0", "3:1", "4:3", "5:9", "6:6"), c -> c.split(":")[0], c -> c.split(":")[1],
+            (c, depth) -> threaded.add(c.split(":")[0] + "/" + depth));
+        check(threaded.equals(java.util.List.of("1/0", "3/1", "4/2", "2/0", "5/0", "6/0")), "replies follow their parent, orphans and self-replies are roots");
         check(HomeScreen.order("").equals(java.util.List.of(HomeScreen.ROWS)), "default home order");
         java.util.List<String> order = HomeScreen.order("Скоро,Недавние,Скоро,Старая строка");
         check(order.size() == HomeScreen.ROWS.length && order.get(0).equals("Скоро") && order.get(1).equals("Недавние")
