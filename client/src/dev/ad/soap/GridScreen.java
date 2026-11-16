@@ -71,7 +71,7 @@ final class GridScreen implements Screen {
         String[] modes = {"Все", "Мои", "4K UHD"};
         SharedPreferences prefs = host.prefs();
         mode = prefs.getInt(key("mode"), 0);
-        watched = prefs.getInt(key("watched"), 0);
+        watched = prefs.getInt(key("watched"), movies ? 0 : 1);
         genre = prefs.getString(key("genre"), "");
         yearFrom = prefs.getInt(key("year_from"), 0);
         yearTo = prefs.getInt(key("year_to"), 0);
@@ -93,14 +93,14 @@ final class GridScreen implements Screen {
             modeChips.add(chip);
             chips.addView(chip);
         }
+        watchedChip = chip("Просмотренные", () -> {
+            watched = (watched + 1) % (movies ? 3 : 2);
+            host.prefs().edit().putInt(key("watched"), watched).putInt(key("mode"), mode).apply();
+            paint();
+            apply();
+        });
+        chips.addView(watchedChip);
         if (movies) {
-            watchedChip = chip("Просмотренные", () -> {
-                watched = (watched + 1) % 3;
-                host.prefs().edit().putInt(key("watched"), watched).putInt(key("mode"), mode).apply();
-                paint();
-                apply();
-            });
-            chips.addView(watchedChip);
             genreChip = chip("Жанр", this::chooseGenre);
             yearChip = chip("Год", this::chooseYear);
             chips.addView(genreChip);
@@ -183,6 +183,7 @@ final class GridScreen implements Screen {
                 : option == 1 ? Data.byNumberDesc("imdb_rating")
                 : option == 2 ? Data.byNumberDesc("year") : Data.byNumberDesc("id"));
         }
+        if (!movies && watched == 1) items = keep(items, o -> !Data.flag(o, "watching") || o.optInt("unwatched") > 0);
         List<Cards.Card> cards = new ArrayList<>();
         for (JSONObject o : items) {
             if (movies) cards.add(Library.movieCard(host, o));
@@ -289,9 +290,9 @@ final class GridScreen implements Screen {
             chip.setTypeface(i == mode ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
             chip.setTextColor(i == mode ? 0xFFFFFFFF : 0xFFB6BBC4);
         }
-        if (watchedChip == null) return;
-        watchedChip.setText(watched == 2 ? "Не просмотренные" : "Просмотренные");
+        watchedChip.setText(!movies ? "Без просмотренных" : watched == 2 ? "Не просмотренные" : "Просмотренные");
         paintOn(watchedChip, watched > 0);
+        if (!movies) return;
         genreChip.setText(genre.isEmpty() ? "Жанр" : "Жанр: " + genreLabel(genre));
         paintOn(genreChip, !genre.isEmpty());
         yearChip.setText(yearFrom == 0 && yearTo == 0 ? "Год" : "Год: " + yearLabel());
