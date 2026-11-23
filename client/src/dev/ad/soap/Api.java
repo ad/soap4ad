@@ -26,11 +26,29 @@ final class Api {
 
     static String[] login(String login, String password) throws IOException {
         String body = "login=" + URLEncoder.encode(login, "UTF-8") + "&password=" + URLEncoder.encode(password, "UTF-8");
-        JSONObject json = parseObject(request("/auth", body, null, null));
+        return auth(parseObject(request("/auth", body, null, null)));
+    }
+
+    static JSONObject pairCode() throws IOException {
+        JSONObject json = parseObject(request("/auth/paircode/", null, null, null));
+        if (json.optString("code").isEmpty()) throw new IOException(json.optString("msg", "нет кода"));
+        return json;
+    }
+
+    /** Null while the code waits, the /auth answer once it is entered. */
+    static String[] pairCheck(String pairSid) throws IOException {
+        JSONObject json = parseObject(request("/auth/paircheck/", null, null, pairSid));
+        if (json.has("token")) return auth(json);
+        String state = json.optString("state");
+        if (state.equals("wait")) return null;
+        throw new IOException(state.isEmpty() ? json.optString("msg", "ошибка сервера") : state);
+    }
+
+    private static String[] auth(JSONObject json) throws IOException {
         String token = json.optString("token", "");
         String session = json.optString("sid", "");
         if (token.isEmpty() || session.isEmpty()) throw new IOException(json.optString("message", "login failed"));
-        return new String[] {token, session, json.optString("till", "")};
+        return new String[] {token, session, json.optString("till", ""), json.optString("login", "")};
     }
 
     static String text(String html) {

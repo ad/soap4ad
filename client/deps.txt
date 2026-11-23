@@ -9,3 +9,4 @@ https://dl.google.com/android/maven2/androidx/media3/media3-extractor/1.8.0/medi
 https://repo1.maven.org/maven2/com/google/guava/guava/33.3.1-android/guava-33.3.1-android.jar 2c3e41d1b380f2044d257947a3aa82dabf3ae4b978622745254aa18b6cf89ab0
 https://repo1.maven.org/maven2/com/google/guava/failureaccess/1.0.2/failureaccess-1.0.2.jar 8a8f81cf9b359e3f6dfa691a1e776985c061ef2f223c9b2c80753e1b458e8064
 https://dl.google.com/android/maven2/androidx/collection/collection/1.2.0/collection-1.2.0.jar 16d77e8c443fa55fe9a6074d00445d520ca5c9f913cefdbf4828356255214e42
+https://repo1.maven.org/maven2/com/google/zxing/core/3.5.3/core-3.5.3.jar 8d8064c1636fdaef7189dd9055c7d59950a8940a12f2293956446ec3c109fd82

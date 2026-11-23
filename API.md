@@ -15,7 +15,13 @@
 ## Вход
 
 - `POST /auth`, тело `login=…&password=…`. Ответ: `token`, `sid`, `till` (конец подписки), `success`, `message`.
-- `POST /logout` выходит.
+- Вход по коду с телефона, с soap4u 0.01.10. Работает без токена:
+  - `GET` или `POST /auth/paircode/` отдаёт `{"ok":1,"code":"173355","ttl":600,"sid":…,"url":"https://soap4youand.me/tvcode/","qr":"https://soap4youand.me/tvcode/?c=173355"}`. Код живёт 600 с.
+  - Пользователь открывает `url` на телефоне и вводит `code` или сканирует `qr`.
+  - `GET /auth/paircheck/` с `Cookie: PHPSESSID=<sid из paircode>` отдаёт `{"ok":1,"state":"wait"}`. Без cookie или с чужим sid ответ `"state":"expired"`.
+  - После ввода кода и подтверждения на телефоне ответ без `state`: `ok`, `token`, `sid`, `login`, `till`, `4k`, `family`, `family_test`. Это ответ `/auth` вместе с полями `/auth/check`. Телефон показывает устройство по `User-Agent`.
+  - В строках soap4u есть ещё `cancelled` и «Слишком много кодов, новый через минуту». Эти ответы не проверялись.
+- `POST /logout` выходит. 23.11.2026 на сессию, полученную по коду, он ответил 404, тело не сохранилось. Выход не перепроверен.
 - `GET /auth/check` отдаёт `login`, `till` (секунды), `4k`, `family` (список с `fid`, `name`, `main`) и `family_test`.
 - `GET /family/` отдаёт `family`, `selected` (`{fid, name, main}` или `null`, если профиль не выбран) и `sync` (сколько лайков, серий и фильмов добавит или уберёт слияние с профилем).
 - Профиль семьи выбирается для сессии: `POST /family/set/<fid>/`, тело `fid=<fid>`, ответ `{"ok":1,"name":…}`. Сброс на «без профиля»: `POST /family/unset/`, проверено с телом `fid=<текущий fid>`, ответ `{"ok":1}`. От профиля зависят «Мои», отметки просмотра и «продолжить просмотр».
